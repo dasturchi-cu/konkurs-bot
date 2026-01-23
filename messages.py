@@ -31,7 +31,7 @@ SUBSCRIPTION_SUCCESS = """✅ <b>Ajoyib!</b>
 
 Siz barcha kanallarga obuna bo'ldingiz.
 
-Endi referal havolangizni oling va 10 ta do'st taklif qiling! 👇"""
+Endi referal havolangizni oling va {limit} ta do'st taklif qiling! 👇"""
 
 # Referal statistika / Taklif qilish xabari
 REFERRAL_MESSAGE = """🧠 <b>MATEMATIKA TEST QUIZ — bilim orqali yutuq!</b>
@@ -42,7 +42,7 @@ REFERRAL_MESSAGE = """🧠 <b>MATEMATIKA TEST QUIZ — bilim orqali yutuq!</b>
 🏆 Yuqori natija egalariga sovg‘alar va bonuslar
 
 🔒 <b>Yopiq guruhga qo‘shilish sharti:</b>
-➡️ 10 nafar do‘stingizni taklif qilishingiz kerak bo‘ladi.
+➡️ {limit} nafar do‘stingizni taklif qilishingiz kerak bo‘ladi.
 
 🔥 Tasodif yo‘q — faqat bilim baholanadi.
 Do‘stlaringizni taklif qiling va birga yutuqqa erishing!
@@ -51,14 +51,14 @@ Do‘stlaringizni taklif qiling va birga yutuqqa erishing!
 
 {link}"""
 
-REFERRAL_STATS = """📊 <b>Sizning statistikangiz:</b> {count}/10
+REFERRAL_STATS = """📊 <b>Sizning statistikangiz:</b> {count}/{limit}
 
 {message}"""
 
 # 10 ta do'st to'lganda
 CONGRATULATIONS = """🎉 <b>TABRIKLAYMIZ!</b>
 
-Siz 10 ta do'st taklif qildingiz va yopiq guruhga qo'shildingiz! 🎊
+Siz {limit} ta do'st taklif qildingiz va yopiq guruhga qo'shildingiz! 🎊
 
 🔒 <b>Yopiq guruhga kirish:</b>
 👉 {link}

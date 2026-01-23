@@ -42,9 +42,12 @@ async def callback_check_subscription(callback: CallbackQuery):
                     # Real countni olish
                     current_count = await Database.get_referral_count(referrer_id)
                     
+                    from services import ConfigCache
+                    limit = ConfigCache.get_limit()
+                    
                     await callback.bot.send_message(
                         chat_id=referrer_id,
-                        text=f"🎉 Yangi do'st qo'shildi! (+1)\n\n👥 Jami: {current_count}/10"
+                        text=f"🎉 Yangi do'st qo'shildi! (+1)\n\n👥 Jami: {current_count}/{limit}"
                     )
                  except Exception:
                     pass

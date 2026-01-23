@@ -49,13 +49,12 @@ async def show_referral_link(message: Message):
     LIMIT = ConfigCache.get_limit()
 
     # Referal matnini olish (ConfigCache dan yoki messages.py dan)
-    msg_text = ConfigCache.get_message().format(link=referral_link)
+    msg_text = ConfigCache.get_message().format(link=referral_link, limit=LIMIT)
     
     full_text = f"📊 <b>Sizning statistikangiz:</b> {invited}/{LIMIT}\n\n" + msg_text
     
     if invited >= LIMIT:
         if user and user.get("is_completed"):
-             # full_text += f"\n\n✅ <b>Siz yopiq guruhga kirish huquqini olgansiz.</b>"
              pass # Jim turamiz
         else:
              full_text += f"\n\n🎉 <b>Tabriklaymiz! Shart bajarildi.</b>\nYopiq guruh havolasi pastda alohida xabarda keladi 👇"
@@ -108,7 +107,7 @@ async def refresh_stats(callback: CallbackQuery):
     
     LIMIT = ConfigCache.get_limit()
 
-    msg_text = ConfigCache.get_message().format(link=referral_link)
+    msg_text = ConfigCache.get_message().format(link=referral_link, limit=LIMIT)
     full_text = f"📊 <b>Sizning statistikangiz:</b> {invited}/{LIMIT}\n\n" + msg_text
     
     if invited >= LIMIT:
