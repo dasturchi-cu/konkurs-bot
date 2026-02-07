@@ -36,18 +36,20 @@ async def admin_help(message: Message):
 /stats - Bot statistikasi
 /leaderboard - TOP 10 ishtirokchilar
 
-🏆 <b>G'oliblar:</b>
+💸 <b>G'oliblar va Yutuqlar:</b>
 /set_winner [rank] [user_id] [sovrin] - G'olibni belgilash
 Masalan: /set_winner 1 123456 "100,000 so'm"
 
-📨 <b>To'lov Isboti:</b>
-Rasm yuborib, 
-
- "/proof [rank]" deb reply qiling
+📸 <b>To'lov Isboti Yuklash:</b>
+1-usul: Rasm yuborib, captionida /proof [rank] yozing
+2-usul: Rasmga reply qilib /proof [rank] yozing
 Masalan: /proof 1
 
 📨 <b>Xabar yuborish:</b>
 /send - Admin guruhidan reply qilingan xabarni hammaga yuborish
+
+💡 <b>Eslatma:</b> G'oliblarni belgilaganingizdan keyin, to'lov isbotini yuklang. 
+Bu ishonchni 2x ga oshiradi va foydalanuvchilar yutuqlarni ko'rishadi!
 """.format(limit=ConfigCache.get_limit())
 
     await message.answer(text)

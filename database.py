@@ -50,7 +50,7 @@ class Database:
         """Sozlamani olish"""
         params = {"key": f"eq.{key}", "select": "value"}
         data = await Database._request("GET", "settings", params=params)
-        return data[0]["value"] if data else None
+        return data[0]["value"] if data and len(data) > 0 else None
 
     @staticmethod
     async def update_setting(key: str, value: str) -> bool:
@@ -94,7 +94,7 @@ class Database:
         """Foydalanuvchini olish"""
         params = {"user_id": f"eq.{user_id}", "select": "*"}
         data = await Database._request("GET", "users", params=params)
-        return data[0] if data else None
+        return data[0] if data and len(data) > 0 else None
     
     @staticmethod
     async def create_user(user_id: int, username: str = None, referrer_id: int = None) -> dict | None:
@@ -110,7 +110,7 @@ class Database:
         }
         
         data = await Database._request("POST", "users", data=payload)
-        created_user = data[0] if data else None
+        created_user = data[0] if data and len(data) > 0 else None
         
         return created_user
 
@@ -165,13 +165,15 @@ class Database:
     @staticmethod
     async def get_stats() -> dict:
         """Umumiy statistika"""
-        params = {"select": "count", "limit": "1"}
+        # Barcha foydalanuvchilar
         resp = await Database._request("GET", "users", params={"select": "id"})
         total = len(resp) if resp else 0
         
+        # Referal orqali kelganlar (is_referral_counted=true)
         resp_ref = await Database._request("GET", "users", params={"select": "id", "is_referral_counted": "eq.true"})
         referrals = len(resp_ref) if resp_ref else 0
         
+        # Yakunlaganlar (is_completed=true)
         resp_comp = await Database._request("GET", "users", params={"select": "id", "is_completed": "eq.true"})
         completed = len(resp_comp) if resp_comp else 0
         

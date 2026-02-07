@@ -32,7 +32,8 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
     """Asosiy menyu klaviaturasi"""
     keyboard = [
         [KeyboardButton(text="🔗 Referal havolam")],
-        [KeyboardButton(text="📊 Statistikam"), KeyboardButton(text="🏆 Natijalar")]
+        [KeyboardButton(text="📊 Statistikam")],
+        [KeyboardButton(text="💸 Sovrindorlar 🏆")]
     ]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 

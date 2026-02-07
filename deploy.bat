@@ -1,0 +1,23 @@
+@echo off
+REM Windows uchun deploy skripti
+
+echo 🔄 Botni qayta deploy qilish boshlandi...
+
+REM 1. Eski containerni to'xtatish va o'chirish
+echo ⏹️  Eski container to'xtatilmoqda...
+docker-compose down
+
+REM 2. Yangi image build qilish
+echo 🔨 Yangi image build qilinmoqda...
+docker-compose build --no-cache
+
+REM 3. Yangi containerni ishga tushirish
+echo 🚀 Yangi container ishga tushirilmoqda...
+docker-compose up -d
+
+REM 4. Loglarni ko'rsatish
+echo 📋 Bot loglari:
+docker-compose logs -f --tail=50 bot
+
+echo ✅ Deploy muvaffaqiyatli yakunlandi!
+

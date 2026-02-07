@@ -53,8 +53,13 @@ async def callback_check_subscription(callback: CallbackQuery):
                     pass
 
         await callback.answer("✅ Ajoyib!", show_alert=False)
-        await callback.message.delete()
-        await callback.message.answer(
+        try:
+            await callback.message.delete()
+        except:
+            pass
+        
+        await callback.bot.send_message(
+            chat_id=callback.message.chat.id,
             text=WELCOME_MESSAGE,
             reply_markup=get_main_menu_keyboard()
         )

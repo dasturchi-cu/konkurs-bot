@@ -37,7 +37,11 @@ class SubscriptionMiddleware(BaseMiddleware):
         # Admin buyruqlari uchun ham ishlamaydi
         if isinstance(event, Message) and event.text and event.text.startswith("/"):
             # Admin buyruqlari
-            admin_commands = ["/admin", "/stat", "/users", "/completed", "/broadcast", "/check"]
+            admin_commands = [
+                "/admin", "/stats", "/set_limit", "/set_link", "/set_video", "/set_message",
+                "/channels", "/add_channel", "/del_channel", "/send", "/leaderboard",
+                "/set_winner", "/proof", "/stat", "/users", "/completed", "/broadcast", "/check"
+            ]
             if any(event.text.startswith(cmd) for cmd in admin_commands):
                 return await handler(event, data)
         

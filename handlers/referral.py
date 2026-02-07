@@ -126,15 +126,26 @@ async def refresh_stats(callback: CallbackQuery):
     VIDEO_ID = ConfigCache.get_video_id()
     try:
         if VIDEO_ID:
-            await callback.message.answer_video(
+            await callback.bot.send_video(
+                chat_id=callback.message.chat.id,
                 video=VIDEO_ID,
                 caption=full_text,
                 reply_markup=markup
             )
         else:
-             await callback.message.answer(full_text, reply_markup=markup, disable_web_page_preview=True)
+             await callback.bot.send_message(
+                 chat_id=callback.message.chat.id,
+                 text=full_text,
+                 reply_markup=markup,
+                 disable_web_page_preview=True
+             )
     except Exception as e:
-        await callback.message.answer(full_text, reply_markup=markup, disable_web_page_preview=True)
+        await callback.bot.send_message(
+            chat_id=callback.message.chat.id,
+            text=full_text,
+            reply_markup=markup,
+            disable_web_page_preview=True
+        )
     
     await callback.answer()
     
