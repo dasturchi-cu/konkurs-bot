@@ -49,11 +49,33 @@ async def main():
         # return # Database bo'lmasa ham ishlayversin (cache configdan oladi)
         pass
     
-    # Bot va dispatcher yaratish
+    # Bot va dispatcher yaratish (tarmoq muammolarini hal qilish uchun timeout qo'shildi)
+    from aiohttp import ClientSession, ClientTimeout, TCPConnector
+    
+    # Tarmoq sozlamalari - timeout va retry uchun
+    # Windows tarmoq muammolarini hal qilish uchun timeout va connector sozlandi
+    connector = TCPConnector(
+        limit=100,
+        limit_per_host=10,
+        ttl_dns_cache=300,
+        force_close=False,
+        enable_cleanup_closed=True
+    )
+    
+    timeout = ClientTimeout(total=60, connect=30, sock_read=30)
+    
+    # Custom session yaratish
+    session = ClientSession(
+        connector=connector,
+        timeout=timeout
+    )
+    
     bot = Bot(
         token=BOT_TOKEN,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+        session=session
     )
+    
     dp = Dispatcher()
     
     # Handlerlarni ro'yxatdan o'tkazish
@@ -76,7 +98,9 @@ async def main():
     try:
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
-        await bot.session.close()
+        # Session'ni yopish (bot.session biz yaratgan session'ga teng)
+        if bot.session:
+            await bot.session.close()
 
 
 if __name__ == "__main__":

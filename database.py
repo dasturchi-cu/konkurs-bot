@@ -98,7 +98,19 @@ class Database:
     
     @staticmethod
     async def create_user(user_id: int, username: str = None, referrer_id: int = None) -> dict | None:
-        """Yangi foydalanuvchi yaratish"""
+        """Yangi foydalanuvchi yaratish (agar mavjud bo'lsa, uni qaytaradi)"""
+        # Avval tekshirib ko'ramiz, user mavjudmi?
+        existing_user = await Database.get_user(user_id)
+        if existing_user:
+            # Agar user mavjud bo'lsa, faqat username yangilansin (agar o'zgarganda)
+            if username and existing_user.get("username") != username:
+                params = {"user_id": f"eq.{user_id}"}
+                payload = {"username": username}
+                await Database._request("PATCH", "users", data=payload, params=params)
+                existing_user["username"] = username
+            return existing_user
+        
+        # Yangi user yaratish
         payload = {
             "user_id": user_id,
             "username": username,
@@ -110,8 +122,14 @@ class Database:
         }
         
         data = await Database._request("POST", "users", data=payload)
-        created_user = data[0] if data and len(data) > 0 else None
         
+        # Agar duplicate key xatosi bo'lsa (parallel requestlar), yana bir bor tekshiramiz
+        if not data:
+            existing_user = await Database.get_user(user_id)
+            if existing_user:
+                return existing_user
+        
+        created_user = data[0] if data and len(data) > 0 else None
         return created_user
 
     @staticmethod
