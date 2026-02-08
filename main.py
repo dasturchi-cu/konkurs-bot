@@ -49,25 +49,12 @@ async def main():
         # return # Database bo'lmasa ham ishlayversin (cache configdan oladi)
         pass
     
-    # Bot va dispatcher yaratish (tarmoq muammolarini hal qilish uchun timeout qo'shildi)
-    from aiohttp import ClientSession, ClientTimeout, TCPConnector
+    from aiogram.client.session.aiohttp import AiohttpSession
     
-    # Tarmoq sozlamalari - timeout va retry uchun
-    # Windows tarmoq muammolarini hal qilish uchun timeout va connector sozlandi
-    connector = TCPConnector(
-        limit=100,
-        limit_per_host=10,
-        ttl_dns_cache=300,
-        force_close=False,
-        enable_cleanup_closed=True
-    )
-    
-    timeout = ClientTimeout(total=60, connect=30, sock_read=30)
-    
-    # Custom session yaratish
-    session = ClientSession(
-        connector=connector,
-        timeout=timeout
+    # Custom session yaratish - Aiogram Bot uchun maxsus session
+    # Timeoutni shunchaki int (sekund) sifatida beramiz, chunki aiogram hisob-kitob qiladi
+    session = AiohttpSession(
+        timeout=60
     )
     
     bot = Bot(

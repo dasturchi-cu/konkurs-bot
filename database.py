@@ -38,7 +38,10 @@ class Database:
                             return None
                     else:
                         error_text = await response.text()
-                        print(f"❌ API Xato ({method} {endpoint}): {response.status} - {error_text}")
+                        # 409 Conflict (Duplicate Key) xatosini logda ko'rsatmaslik, 
+                        # chunki bu create_user funksiyasida qayta tekshiriladi
+                        if response.status != 409:
+                            print(f"❌ API Xato ({method} {endpoint}): {response.status} - {error_text}")
                         return None
             except Exception as e:
                 print(f"❌ So'rov xatosi: {e}")
