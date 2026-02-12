@@ -2,7 +2,7 @@
 Natijalar (Results) handleri
 """
 from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.types import Message, InputMediaPhoto
 from database import Database
 from services import ConfigCache
 
@@ -10,13 +10,43 @@ router = Router()
 
 
 @router.message(F.text == "🏆 Natijalar")
-@router.message(F.text == "💸 Sovrindorlar 🏆")
+@router.message(F.text.in_({"💸 Sovrindorlar 🏆", "🏆 G'oliblar"}))
 async def show_results(message: Message):
     """Konkurs natijalarini va yutuqlarni ko'rsatish"""
-    # 1. G'oliblar (avval ko'rsatamiz - muhimroq)
+    
+    # 1. Admin saqlagan maxsus postni tekshirish
+    saved_text = await Database.get_setting("winners_text")
+    saved_photo_str = await Database.get_setting("winners_photo")
+    
+    # Agar admin post saqlagan bo'lsa, o'shani chiqaramiz
+    if saved_text or (saved_photo_str and saved_photo_str != "none"):
+        # Rasmlar ro'yxatini olish
+        if saved_photo_str and saved_photo_str != "none":
+            photo_ids = saved_photo_str.split(",")
+            
+            if len(photo_ids) > 1:
+                # Albom ko'rsatish
+                media = []
+                for i, pid in enumerate(photo_ids):
+                    if i == 0:
+                        media.append(InputMediaPhoto(media=pid, caption=saved_text))
+                    else:
+                        media.append(InputMediaPhoto(media=pid))
+                await message.answer_media_group(media=media)
+            else:
+                # Bitta rasm
+                await message.answer_photo(photo=photo_ids[0], caption=saved_text)
+        else:
+            # Faqat matn
+            await message.answer(saved_text)
+        return
+
+    # 2. Agar post bo'lmasa, eski usul (dinamik ro'yxat)
+    
+    # G'oliblar (avval ko'rsatamiz - muhimroq)
     winners = await Database.get_winners()
     
-    # 2. Leaderboard (TOP 10)
+    # Leaderboard (TOP 10)
     leaderboard = await Database.get_leaderboard(limit=10)
     
     # Sarlavha
@@ -30,31 +60,16 @@ async def show_results(message: Message):
             rank = winner['rank']
             user_id = winner['user_id']
             prize = winner['prize']
-            proof_id = winner.get('proof_image_id')
             
             # Rank emoji
             rank_emoji = {"1": "🥇", "2": "🥈", "3": "🥉"}.get(str(rank), f"{rank}.")
             
             # Username yoki ID (database'dan olish)
             user = await Database.get_user(user_id)
-            if user and user.get('username'):
-                username = f"@{user['username']}"
-            else:
-                username = f"ID: {user_id}"
+            username = f"@{user['username']}" if user and user.get('username') else f"ID: {user_id}"
             
-            text += f"{rank_emoji} <b>{rank}-o'rin:</b> {username}\n"
+            text += f"{rank_emoji} {username}\n"
             text += f"💰 <b>Sovrin:</b> {prize}\n\n"
-            
-            # To'lov isboti
-            if proof_id:
-                # Rasmni alohida yuborish
-                try:
-                    await message.answer_photo(
-                        photo=proof_id,
-                        caption=f"{rank_emoji} <b>{rank}-o'rin g'olibi</b>\n💰 <b>Sovrin:</b> {prize}\n\n✅ <b>To'lov isboti</b>"
-                    )
-                except:
-                    pass
     else:
         text += "<i>G'oliblar hali e'lon qilinmagan.</i>\n\n"
     

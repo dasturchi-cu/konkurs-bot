@@ -1,6 +1,8 @@
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, InputMediaPhoto
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 import asyncio
 from config import ADMIN_ID, ADMIN_GROUP_ID
 from database import Database
@@ -227,25 +229,148 @@ async def show_leaderboard(message: Message):
     
     await message.answer(text)
 
+# State
+class SetWinnerState(StatesGroup):
+    waiting_for_post = State()
+
+# Albomlarni vaqtincha saqlash uchun
+ALBUM_CACHE = {}
 
 @router.message(Command("set_winner"))
-async def set_winner_handler(message: Message):
-    """G'olibni belgilash"""
+async def set_winner_start(message: Message, state: FSMContext):
+    """G'oliblarni belgilash jarayonini boshlash"""
     if not is_admin(message.from_user.id): return
     
-    try:
-        # Format: /set_winner 1 123456 "100,000 so'm"
-        parts = message.text.split(maxsplit=3)
-        rank = int(parts[1])
-        user_id = int(parts[2])
-        prize = parts[3].strip('"')
+    # 1. Agar reply qilingan bo'lsa, o'shani birdaniga qabul qilamiz
+    if message.reply_to_message:
+        # Reply qilingan xabarni process funksiyasiga uzatamiz
+        # Sun'iy ravishda state.set_state chaqirmasdan to'g'ridan-to'g'ri chaqiramiz
+        # Lekin process_winner_post state kutadi, shuning uchun biroz boshqacha yondashamiz:
         
-        if await Database.set_winner(rank, user_id, prize):
-            await message.answer(f"✅ {rank}-o'rin g'olibi belgilandi!\nID: {user_id}\nSovrin: {prize}")
-        else:
-            await message.answer("❌ Xatolik!")
-    except Exception as e:
-        await message.answer(f"⚠️ Xato! Ishlatish:\n/set_winner [rank] [user_id] [sovrin]\nMasalan: /set_winner 1 123456 \"100,000 so'm\"\n\nXato: {e}")
+        # State o'rnatamiz
+        await state.set_state(SetWinnerState.waiting_for_post)
+        
+        # Reply qilingan xabarni "yangi xabar" sifatida process funksiyasiga beramiz
+        await process_winner_post(message.reply_to_message, state)
+        return
+
+    # 2. Agar reply bo'lmasa, postni kutamiz
+    await message.answer("📸 Iltimos, g'oliblar postini yuboring (Rasm, Matn yoki Albom).\n\n⚠️ Bu post saqlanadi va TOP 3 ta g'olibga yuboriladi.")
+    await state.set_state(SetWinnerState.waiting_for_post)
+
+
+async def process_album_after_delay(first_message: Message, state: FSMContext, media_group_id: str):
+    """Albomni 3 soniya kutib, barcha rasmlar yig'ilgach qayta ishlash"""
+    await asyncio.sleep(3)
+    
+    album_data = ALBUM_CACHE.pop(media_group_id, None)
+    if not album_data or album_data.get("processed"):
+        return
+    
+    album_data["processed"] = True
+    messages = album_data["messages"]
+    caption = album_data["caption"]
+    
+    # Rasmlarni yig'ish
+    photo_ids = []
+    for msg in messages:
+        if msg.photo:
+            photo_ids.append(msg.photo[-1].file_id)
+        if msg.caption and not caption:
+            caption = msg.caption
+    
+    if not photo_ids:
+        await first_message.answer("❌ Albomda rasm topilmadi!")
+        await state.clear()
+        return
+    
+    # Bazaga saqlash
+    photos_str = ",".join(photo_ids)
+    await Database.update_setting("winners_photo", photos_str)
+    await Database.update_setting("winners_text", caption or "")
+    
+    # G'oliblarga yuborish
+    await send_to_winners(first_message.bot, photo_ids, caption)
+    
+    await first_message.answer(f"✅ Albom ({len(photo_ids)} ta rasm) saqlandi va g'oliblarga yuborildi!\n\n📋 Debug: Yig'ilgan xabarlar: {len(messages)}")
+    await state.clear()
+
+@router.message(SetWinnerState.waiting_for_post)
+async def process_winner_post(message: Message, state: FSMContext):
+    """Postni qabul qilish va qayta ishlash"""
+    
+    # Albom (MediaGroup) tekshiruvi
+    media_group_id = message.media_group_id
+    
+    if media_group_id:
+        # Agar bu albomning bir qismi bo'lsa
+        if media_group_id not in ALBUM_CACHE:
+            ALBUM_CACHE[media_group_id] = {
+                "messages": [],
+                "caption": None,
+                "processed": False
+            }
+            # Background task yaratamiz - 3 soniyadan keyin process qilish uchun
+            asyncio.create_task(process_album_after_delay(message, state, media_group_id))
+        
+        # Xabarni cache ga qo'shamiz
+        ALBUM_CACHE[media_group_id]["messages"].append(message)
+        if message.caption and not ALBUM_CACHE[media_group_id]["caption"]:
+            ALBUM_CACHE[media_group_id]["caption"] = message.caption
+        return
+
+    else:
+        # Oddiy xabar (bitta rasm yoki matn)
+        caption = message.caption or message.text or ""
+        photo_id = message.photo[-1].file_id if message.photo else "none"
+        
+        await Database.update_setting("winners_text", caption)
+        await Database.update_setting("winners_photo", photo_id)
+        
+        # G'oliblarga yuborish
+        photo_ids = [photo_id] if photo_id != "none" else []
+        await send_to_winners(message.bot, photo_ids, caption)
+        
+        await message.answer("✅ Post saqlandi va g'oliblarga yuborildi!")
+        await state.clear()
+
+
+async def send_to_winners(bot, photo_ids: list, caption: str):
+    """G'oliblarga xabar yuborish funksiyasi"""
+    top_users = await Database.get_leaderboard(limit=3)
+    
+    if not top_users:
+        return
+    
+    for idx, user in enumerate(top_users, start=1):
+        user_id = user['user_id']
+        try:
+            user_caption = f"🎉 <b>TABRIKLAYMIZ!</b>\n\n🏆 Siz konkursimizda <b>{idx}-o'rinni</b> egalladingiz!\n\nAdmin tez orada bog'lanadi."
+            if caption:
+                user_caption += f"\n\n{caption}"
+                
+            if photo_ids:
+                if len(photo_ids) > 1:
+                    # Albom yuborish
+                    media = []
+                    for i, pid in enumerate(photo_ids):
+                        if i == 0:
+                            media.append(InputMediaPhoto(media=pid, caption=user_caption))
+                        else:
+                            media.append(InputMediaPhoto(media=pid))
+                    await bot.send_media_group(user_id, media=media)
+                else:
+                    # Bitta rasm
+                    await bot.send_photo(user_id, photo_ids[0], caption=user_caption)
+            else:
+                # Faqat matn
+                await bot.send_message(user_id, user_caption)
+                
+            # Bazaga belgilash
+            await Database.set_winner(idx, user_id, f"{idx}-o'rin (Avto)")
+            
+        except Exception:
+            pass
 
 
 @router.message(F.photo)

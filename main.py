@@ -7,6 +7,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.client.bot import DefaultBotProperties
+from aiogram.fsm.storage.memory import MemoryStorage
 
 # Config va database
 from config import BOT_TOKEN, validate_config
@@ -63,7 +64,7 @@ async def main():
         session=session
     )
     
-    dp = Dispatcher()
+    dp = Dispatcher(storage=MemoryStorage())
     
     # Handlerlarni ro'yxatdan o'tkazish
     dp.include_router(start.router)

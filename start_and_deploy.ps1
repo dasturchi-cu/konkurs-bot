@@ -57,18 +57,18 @@ while ($retryCount -lt $maxRetries -and -not $connected) {
 
 if (-not $connected) {
     Write-Host ""
-    Write-Host "❌ Server hali ishga tushmagan yoki tarmoq muammosi bor!" -ForegroundColor Red
+    Write-Host "X Server hali ishga tushmagan yoki tarmoq muammosi bor!" -ForegroundColor Red
     Write-Host "   Webdock dashboard'da server holatini tekshiring." -ForegroundColor Yellow
     Write-Host ""
     exit
 }
 
 Write-Host ""
-Write-Host "🚀 Deploy qilish boshlandi..." -ForegroundColor Cyan
+Write-Host "DEPLOY QILISH BOSHLANDI..." -ForegroundColor Cyan
 Write-Host ""
 
 # SSH orqali deploy qilish
-Write-Host "📤 Serverga ulanish va deploy qilish..." -ForegroundColor Yellow
+Write-Host "Serverga ulanish va deploy qilish..." -ForegroundColor Yellow
 Write-Host "   SSH: $SSH_HOST" -ForegroundColor Gray
 Write-Host "   Parol: $SSH_PASSWORD" -ForegroundColor Gray
 Write-Host ""
@@ -76,9 +76,9 @@ Write-Host ""
 # SSH komandasi
 $deployCommands = @"
 cd ~/konkurs_bot || { echo 'Papka topilmadi, yaratilmoqda...'; mkdir -p ~/konkurs_bot; cd ~/konkurs_bot; }
-echo '📥 Git pull...'
+echo 'Git pull...'
 git pull origin main || git pull origin master
-echo '🔨 Deploy...'
+echo 'Deploy...'
 if [ -f deploy.sh ]; then
     chmod +x deploy.sh
     bash deploy.sh
@@ -91,11 +91,11 @@ else
     docker-compose logs --tail=50 bot
 fi
 echo ''
-echo '📊 Container holati:'
+echo 'Container holati:'
 docker ps | grep konkurs_bot || docker ps -a | grep konkurs_bot
 "@
 
-Write-Host "⚠️  SSH orqali ulanish kerak. Quyidagi komandani bajaring:" -ForegroundColor Yellow
+Write-Host "SSH orqali ulanish kerak. Quyidagi komandani bajaring:" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "ssh $SSH_HOST" -ForegroundColor White
 Write-Host "Parol: $SSH_PASSWORD" -ForegroundColor White
@@ -108,13 +108,13 @@ Write-Host ""
 
 # Agar sshpass yoki plink bo'lsa, avtomatik qilish
 if (Get-Command sshpass -ErrorAction SilentlyContinue) {
-    Write-Host "✅ sshpass topildi, avtomatik deploy..." -ForegroundColor Green
+    Write-Host "sshpass topildi, avtomatik deploy..." -ForegroundColor Green
     sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no $SSH_HOST $deployCommands
 } elseif (Get-Command plink -ErrorAction SilentlyContinue) {
-    Write-Host "✅ plink topildi, avtomatik deploy..." -ForegroundColor Green
+    Write-Host "plink topildi, avtomatik deploy..." -ForegroundColor Green
     echo y | plink -ssh -pw $SSH_PASSWORD $SSH_HOST $deployCommands
 } else {
-    Write-Host "ℹ️  sshpass yoki plink topilmadi. Yuqoridagi qadamlarni manual bajaring." -ForegroundColor Yellow
+    Write-Host "sshpass yoki plink topilmadi. Yuqoridagi qadamlarni manual bajaring." -ForegroundColor Yellow
 }
 
 Write-Host ""
